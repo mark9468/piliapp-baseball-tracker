@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         PiliApp 棒球勝率紀錄器
 // @namespace    piliapp-baseball-tracker
-// @version      2.0.0
+// @version      2.1.0
 // @description  自動記錄勝敗、勝率、連勝連敗及目標勝率
 // @match        *://*.piliapp.com/*
 // @grant        none
@@ -15,8 +15,8 @@
   if (document.getElementById('piliapp-tracker')) return;
 
   const KEY = 'piliapp_baseball_tracker_v1';
-
   let data;
+
   try {
     data = JSON.parse(localStorage.getItem(KEY));
   } catch (e) {}
@@ -29,17 +29,11 @@
 
   function readGameResult() {
     const text = document.body.innerText || '';
-
-    if (text.includes('你贏了！') || text.includes('你贏了!')) {
-      return 'W';
-    }
-    if (text.includes('AI獲勝') || text.includes('AI获胜')) {
-      return 'L';
-    }
+    if (text.includes('你贏了！') || text.includes('你贏了!')) return 'W';
+    if (text.includes('AI獲勝') || text.includes('AI获胜')) return 'L';
     return null;
   }
 
-  // 若載入腳本時畫面已經有結果，先不重複計算
   let autoRecorded = Boolean(readGameResult());
 
   const panel = document.createElement('div');
@@ -158,9 +152,8 @@
     if (rate() >= target) return 0;
 
     let n = 0;
-    while ((data.wins + n) / (total() + n) < target / 100) {
-      n++;
-    }
+    while ((data.wins + n) / (total() + n) < target / 100) n++;
+
     return n;
   }
 
@@ -245,7 +238,7 @@
 
   render();
 
-  // 自動偵測比賽結果，並避免同一場重複記錄
+  // 忽略紀錄器自己的畫面變動，避免反覆觸發
   function checkAutoResult() {
     const result = readGameResult();
 
@@ -266,7 +259,13 @@
         : '自動偵測：❌ 已記錄失敗';
   }
 
-  const observer = new MutationObserver(checkAutoResult);
+  const observer = new MutationObserver(records => {
+    const pageChanged = records.some(record =>
+      !panel.contains(record.target)
+    );
+
+    if (pageChanged) checkAutoResult();
+  });
 
   observer.observe(document.body, {
     childList: true,
