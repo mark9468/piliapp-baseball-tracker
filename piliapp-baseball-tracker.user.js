@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         PiliApp 棒球勝率紀錄器
 // @namespace    piliapp-baseball-tracker
-// @version      2.1.0
+// @version      2.1.1
 // @description  自動記錄勝敗、勝率、連勝連敗及目標勝率
 // @match        *://*.piliapp.com/*
 // @grant        none
@@ -27,11 +27,16 @@
 
   const save = () => localStorage.setItem(KEY, JSON.stringify(data));
 
-  function readGameResult() {
-    const text = document.body.innerText || '';
+function readGameResult() {
+
+    const text = (document.body.innerText || '').replace(/\s+/g, '');
+
     if (text.includes('你贏了！') || text.includes('你贏了!')) return 'W';
+
     if (text.includes('AI獲勝') || text.includes('AI获胜')) return 'L';
+
     return null;
+
   }
 
   let autoRecorded = Boolean(readGameResult());
